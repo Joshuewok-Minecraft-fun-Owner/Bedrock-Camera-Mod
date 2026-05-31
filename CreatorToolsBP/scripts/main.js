@@ -69,6 +69,11 @@ class CreatorTools {
     // Show main menu
     system.run(() => {
       this.uiManager.showMainMenu(player, this.playerSettings.get(playerId));
+      try {
+        player.sendMessage('§eTip: Use /tools or !tools to open the Creator Tools menu');
+      } catch (e) {
+        // ignore if sendMessage is unavailable in this environment
+      }
     });
   }
 
@@ -77,27 +82,33 @@ class CreatorTools {
   }
 
   onChat(event) {
-    const message = event.message.toLowerCase();
+    let message = String(event.message || '').trim();
     const player = event.sender;
     const settings = this.playerSettings.get(player.id);
 
-    if (!settings) return;
+    if (!settings || message.length === 0) return;
 
-    if (message === "!tools") {
+    // Accept both `!` and `/` prefixes for commands (e.g. `!tools` or `/tools`)
+    const firstChar = message.charAt(0);
+    if (firstChar !== '!' && firstChar !== '/') return; // not one of our commands
+
+    const content = message.substring(1).toLowerCase();
+
+    if (content === "tools") {
       event.cancel = true;
       this.uiManager.showMainMenu(player, settings);
-    } else if (message === "!camera") {
+    } else if (content === "camera") {
       event.cancel = true;
       this.uiManager.showCameraMenu(player, settings);
-    } else if (message === "!privacy") {
+    } else if (content === "privacy") {
       event.cancel = true;
       this.uiManager.showPrivacyMenu(player, settings);
-    } else if (message === "!optimize") {
+    } else if (content === "optimize") {
       event.cancel = true;
       this.uiManager.showOptimizationMenu(player, settings);
-    } else if (message.startsWith("!preset ")) {
+    } else if (content.startsWith("preset ")) {
       event.cancel = true;
-      const presetName = message.substring(8).trim();
+      const presetName = content.substring(7).trim();
       this.cameraManager.applyPreset(player, presetName, settings);
     }
   }

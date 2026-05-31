@@ -29,7 +29,7 @@
 1. Download CreatorTools.mcaddon
 2. Double-click to install
 3. Enable in world settings
-4. Type !tools in chat
+4. Type !tools or /tools in chat
 5. Navigate menu
 ```
 

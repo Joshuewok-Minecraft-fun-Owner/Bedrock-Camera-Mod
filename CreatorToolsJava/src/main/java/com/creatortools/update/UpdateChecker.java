@@ -19,10 +19,11 @@ import java.time.Duration;
  */
 public class UpdateChecker {
 	private static final Logger LOGGER = LoggerFactory.getLogger("CreatorToolsUpdater");
-	private static final String GITHUB_API_URL = "https://api.github.com/repos/Joshuewok-Minecraft-fun-Owner/MC-Camera-Mod/releases";
+	private static final String GITHUB_API_URL = "https://api.github.com/repos/Joshuewok-Minecraft-fun-Owner/Bedrock-Camera-Mod/releases/latest";
 	private static final String MOD_VERSION = CreatorToolsMod.MOD_VERSION;
 
 	private String latestVersion = null;
+	private String latestReleaseName = null;
 	private String downloadURL = null;
 	private boolean updateAvailable = false;
 
@@ -63,32 +64,54 @@ public class UpdateChecker {
 		HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
 		if (response.statusCode() == 200) {
-			// Parse releases array and find the latest Java release
-			JsonArray releases = JsonParser.parseString(response.body()).getAsJsonArray();
-			
-			for (int i = 0; i < releases.size(); i++) {
-				JsonObject release = releases.get(i).getAsJsonObject();
-				String tagName = release.get("tag_name").getAsString();
-				
-				// Only process Java releases
-				if (!tagName.contains("-java")) {
-					continue;
-				}
-				
-				// Extract version from tag (v1.0.1-java -> 1.0.1)
-				String version = tagName.replace("v", "").replace("-java", "");
-				
-				this.latestVersion = version;
-				this.downloadURL = release.get("html_url").getAsString();
+			JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
+			String tagName = release.has("tag_name") ? release.get("tag_name").getAsString() : null;
+			this.latestReleaseName = release.has("name") ? release.get("name").getAsString() : null;
+			String releaseUrl = release.has("html_url") ? release.get("html_url").getAsString() : null;
 
-				if (isNewerVersion(version, MOD_VERSION)) {
-					this.updateAvailable = true;
-					LOGGER.info("Update available for Creator Tools: {} (current: {})", version, MOD_VERSION);
-					LOGGER.info("Download at: {}", this.downloadURL);
+			if (tagName == null || releaseUrl == null) {
+				LOGGER.warn("Latest release response missing expected fields");
+				return;
+			}
+
+			this.latestVersion = normalizeVersion(tagName);
+			this.downloadURL = findDownloadUrl(release, releaseUrl);
+
+			if (isNewerVersion(this.latestVersion, MOD_VERSION)) {
+				this.updateAvailable = true;
+				LOGGER.info("Update available for Creator Tools: {} (current: {})", this.latestVersion, MOD_VERSION);
+				LOGGER.info("Download at: {}", this.downloadURL);
+				if (this.latestReleaseName != null) {
+					LOGGER.info("Release name: {}", this.latestReleaseName);
 				}
-				break; // Found latest Java release, stop searching
 			}
 		}
+	}
+
+	private String normalizeVersion(String tagName) {
+		String version = tagName.startsWith("v") ? tagName.substring(1) : tagName;
+		int dashIndex = version.indexOf('-');
+		if (dashIndex > 0) {
+			version = version.substring(0, dashIndex);
+		}
+		return version;
+	}
+
+	private String findDownloadUrl(JsonObject release, String fallbackUrl) {
+		if (!release.has("assets") || !release.get("assets").isJsonArray()) {
+			return fallbackUrl;
+		}
+
+		JsonArray assets = release.get("assets").getAsJsonArray();
+		for (int i = 0; i < assets.size(); i++) {
+			JsonObject asset = assets.get(i).getAsJsonObject();
+			String assetName = asset.has("name") ? asset.get("name").getAsString() : null;
+			if (assetName != null && assetName.endsWith(".jar") && asset.has("browser_download_url")) {
+				return asset.get("browser_download_url").getAsString();
+			}
+		}
+
+		return fallbackUrl;
 	}
 
 	/**

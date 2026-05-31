@@ -8,7 +8,7 @@ Professional camera, privacy, and optimization tools for **Bedrock** and **Java*
 1. Download `CreatorTools.mcaddon`
 2. Double-click to install
 3. Enable in world settings
-4. Chat: `!tools`
+4. Chat: `!tools` or `/tools`
 
 ### Java Edition (Fabric)
 1. Install [Fabric Loader](https://fabricmc.net) for Minecraft 1.20.1
@@ -88,15 +88,11 @@ Individual toggles for:
 ## 📝 Bedrock: Commands
 
 ```
-!tools              # Open main menu
-!camera             # Camera tools
-!privacy            # Privacy settings
-!optimize           # Optimization menu
-!preset cinematic   # Apply preset directly
-!preset side
-!preset orbit
-!preset topdown
-!preset static
+!tools or /tools              # Open main menu
+!camera or /camera            # Camera tools
+!privacy or /privacy          # Privacy settings
+!optimize or /optimize        # Optimization menu
+!preset <name> or /preset <name>   # Apply preset directly (cinematic, side, orbit, topdown, static)
 ```
 
 ---
